@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "sealed-oracle: which control stops a coding agent from gaming its tests"
+type: software
+authors:
+  - given-names: Christoph
+    family-names: Nützel
+    alias: pantheonzeus
+version: 0.1.0
+repository-code: "https://github.com/pantheonzeus/sealed-oracle"
+license: MIT

@@ -1,0 +1,43 @@
+[project]
+name = "sealed-oracle"
+version = "0.1.0"
+description = "Which control stops a coding agent from gaming its tests: a prompt, a read-only test directory, or sealed tests."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "pytest>=8",
+    "pyyaml>=6",
+    "sdlc-eval-kit",
+]
+
+[project.urls]
+Repository = "https://github.com/pantheonzeus/sealed-oracle"
+
+[project.scripts]
+sealed-oracle = "sealed_oracle.cli:main"
+
+[project.optional-dependencies]
+runner = ["sdlc-eval-kit[runner]"]
+
+[tool.uv.sources]
+sdlc-eval-kit = { path = "kit" }
+
+[dependency-groups]
+dev = ["ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["kit"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
