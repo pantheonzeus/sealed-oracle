@@ -1,0 +1,84 @@
+# mini-swe-agent configuration used for every trial, under every control. Copied from
+# sdlc-eval-kit's agent.yaml (itself adapted from mini-swe-agent 2.4.6's swebench.yaml); the only
+# change is step 4, which no longer assumes tests exist, so the sealed control gets the same text.
+# Changing this file changes what is measured: record why in CHANGELOG.md.
+agent:
+  system_template: |
+    You are a helpful assistant that can interact with a computer shell to solve programming tasks.
+  instance_template: |
+    <task>
+    {{task}}
+    </task>
+
+    <instructions>
+    You are a software engineer working in a Python repository at /work (the working directory
+    for every command). Make changes to non-test source files so the repository does what the
+    task asks, in a way that is general and consistent with the existing code.
+
+    - MODIFY: source files under /work.
+    - DO NOT MODIFY: tests and configuration files (pyproject.toml).
+    - Python 3.12 and pytest are installed. There is no network access: you cannot install packages.
+    - The repository is a git repository with the original state committed. `git diff` shows your changes.
+
+    Recommended workflow:
+    1. Find and read the relevant files.
+    2. Reproduce the problem or sketch the new behaviour with a small script.
+    3. Edit the source code.
+    4. Run your script and any tests (`python -m pytest -q`) to verify.
+
+    Each response contains a short reasoning text and at least one bash tool call. Every command
+    runs in a new subshell, so `cd` and environment variables do not persist. Use non-interactive
+    commands only (no vi, nano or less).
+
+    When you are done, submit with this exact command, on its own:
+
+    echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT
+
+    You cannot continue working after you submit.
+    </instructions>
+
+environment:
+  cwd: /work
+  timeout: 120
+  interpreter: ["bash", "-c"]
+  env:
+    PAGER: cat
+    MANPAGER: cat
+    PIP_PROGRESS_BAR: "off"
+
+model:
+  observation_template: |
+    {% if output.exception_info -%}
+    <exception>{{output.exception_info}}</exception>
+    {% endif -%}
+    <returncode>{{output.returncode}}</returncode>
+    {% if output.output | length < 10000 -%}
+    <output>
+    {{ output.output -}}
+    </output>
+    {%- else -%}
+    <warning>
+    The output of your last command was too long. Use head, tail, sed -n or a narrower search.
+    </warning>
+    <output_head>
+    {{ output.output[:5000] }}
+    </output_head>
+    <output_tail>
+    {{ output.output[-5000:] }}
+    </output_tail>
+    {%- endif -%}
+  format_error_template: |
+    {% if finish_reason is defined and (finish_reason == "length" or (finish_reason == "tool_calls" and not has_tool_calls)) -%}
+    Your previous response was cut off at the output token limit before it produced a tool call. Respond more concisely and finish with exactly one bash tool call.
+    {%- else -%}
+    Tool call error:
+
+    <error>
+    {{error}}
+    </error>
+
+    Every response must call the bash tool with {"command": "your_command_here"}. To finish, run
+    `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT` on its own.
+    {%- endif %}
+  model_kwargs:
+    drop_params: true
